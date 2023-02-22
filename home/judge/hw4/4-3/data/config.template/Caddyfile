@@ -1,0 +1,12 @@
+{
+	ocsp_stapling off
+}
+
+http:// {
+	redir https://{hostport}{uri} 302
+}
+
+domain
+log
+tls config/fullchain.cer config/cert.key
+reverse_proxy localhost:8080

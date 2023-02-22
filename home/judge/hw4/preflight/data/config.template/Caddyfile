@@ -1,0 +1,13 @@
+{
+	ocsp_stapling off
+}
+
+http:// {
+	redir https://{hostport}{uri} 302
+}
+
+domain
+log
+root * static
+file_server
+tls config/fullchain.cer config/cert.key

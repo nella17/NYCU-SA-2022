@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -x
+
+BASEDIR="$(dirname -- "${BASH_SOURCE[0]}")"
+cd "$BASEDIR" || return
+
+URL="${1?url}"
+
+./src/run.py "$URL" | tee log

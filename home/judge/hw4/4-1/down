@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+BASEDIR="$(dirname -- "${BASH_SOURCE[0]}")"
+cd "$BASEDIR" || return
+
+pkill -F data/run.pid
+rm -fr 'data/config' 'data/run.pid' data/static/*

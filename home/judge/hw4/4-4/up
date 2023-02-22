@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -x
+
+BASEDIR="$(dirname -- "${BASH_SOURCE[0]}")"
+cd "$BASEDIR" || return
+
+URL="${1?url}"
+
+tmp="$(mktemp data/r/tmp_XXXXXX)"
+rm "$tmp"
+./src/run.py "$URL" "$tmp.xml" | tee log

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -x
+
+BASEDIR="$(dirname -- "${BASH_SOURCE[0]}")"
+cd "$BASEDIR" || return
+
+DOMAIN="${1?domain}"
+
+rm -fr 'data/config'
+cp -r 'data/config.template' 'data/config'
+./src/setup.sh "$DOMAIN" 'data/config' 'data/static'
+daemon -f -p data/run.pid -o log ./src/server.sh 'data/config'
+while ! curl -v localhost; do sleep 1; done
+while ! curl -v localhost:8080; do sleep 1; done

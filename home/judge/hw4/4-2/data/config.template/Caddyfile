@@ -1,0 +1,31 @@
+{
+	ocsp_stapling off
+}
+
+http:// {
+	redir https://{hostport}{uri} 302
+}
+
+domain {
+	tls config/fullchain.cer config/cert.key
+	log
+
+	@origin header Origin *
+	@preflight method OPTIONS
+    @api_query path_regexp path ^/api/1.0/query/(.*)/(.*)$
+    @api {
+        not path_regexp path ^/api/1.0/query
+        path_regexp path ^/api/1.0/(.*)$
+    }
+
+	rewrite @api_query /query?k={re.path.1}&v={re.path.2}
+	rewrite @api /{re.path.1}
+	reverse_proxy http://ca.nasa.nycu:4442
+
+	header -X-Powered-By
+	header @origin Access-Control-Allow-Origin "{http.request.header.Origin}"
+	header @preflight {
+		Access-Control-Allow-Methods "GET,POST,PUT,DELETE,HEAD,OPTIONS"
+		Access-Control-Allow-Headers "{http.request.header.Access-Control-Request-Headers}"
+	}
+}

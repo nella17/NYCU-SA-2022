@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -x
+
+BASEDIR="$(dirname -- "${BASH_SOURCE[0]}")"
+cd "$BASEDIR" || return
+
+# echo "$@" | tee -a log
+
+while getopts d:p:u: op 2>/dev/null; do
+  case $op in
+    d)
+      DOMAIN=$OPTARG
+      ;;
+    p)
+      JWT=$OPTARG
+      ;;
+    u)
+      PASS=$OPTARG
+      ;;
+    *)
+      >&2 echo "$op"
+      exit 255
+  esac
+done
+
+rm -fr 'data/config'
+cp -r 'data/config.template' 'data/config'
+./src/setup.sh "$DOMAIN" 'data/config' 'data/static'
+daemon -f -p data/run.pid -o log ./src/server.sh 'data/config' 'data/static' "$@"
+while ! curl -v localhost; do sleep 1; done
+while ! curl -v localhost:8080; do sleep 1; done
