@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# add `command="$PATH/log"` before key in `~/.ssh/authorized_keys`
+
+SFTP_SERVER=/usr/libexec/sftp-server
+NOW=$(date +%Y-%m-%d.%H%M%S)
+IP=${SSH_CLIENT// */}
+LOGFILE="/home/judge/log"
+
+echo "$NOW $IP: $SSH_ORIGINAL_COMMAND" >> $LOGFILE
+
+if [ "${SSH_ORIGINAL_COMMAND:-}" = "$SFTP_SERVER" ]
+then
+  echo "SKIP SFTP" >> $LOGFILE
+  exit
+fi
+
+if [[ "${SSH_ORIGINAL_COMMAND:-}" = *"shutdown"* ]]
+then
+  echo "SKIP shutdown" >> $LOGFILE
+  exit
+fi
+
+sh -c "${SSH_ORIGINAL_COMMAND:-}"
