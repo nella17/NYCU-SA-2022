@@ -1,0 +1,2 @@
+/net/data/public        -intr,nfsv4     10.113.18.2:/vol/public
+/net/data/stu18         -intr,nfsv4     10.113.18.2:/vol/stu18

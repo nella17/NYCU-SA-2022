@@ -1,0 +1,14 @@
+{
+	ocsp_stapling off
+}
+
+http:// {
+	redir https://{hostport}{uri} 302
+}
+
+https://meow {
+    log
+    root * static
+    file_server
+    tls internal
+}
