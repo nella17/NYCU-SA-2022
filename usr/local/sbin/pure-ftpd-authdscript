@@ -1,0 +1,18 @@
+#!/bin/sh
+
+if test "$AUTHD_ACCOUNT" = "anonymous"; then
+  echo 'auth_ok:1'
+  echo 'uid:65534'
+  echo 'gid:65534'
+else
+  echo 'auth_ok:0'
+fi
+
+# chroot
+if test "$AUTHD_ACCOUNT" != "sysadm"; then
+  echo 'dir:/home/ftp/./'
+else
+  echo 'dir:/home/ftp/'
+fi
+
+echo 'end'

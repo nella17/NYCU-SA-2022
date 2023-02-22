@@ -1,0 +1,97 @@
+#!/usr/local/bin/bash
+
+function help() {
+cat << EOF
+Usage:
+- create: zfsbak DATASET [ROTATION_CNT]
+- list: zfsbak -l|--list [DATASET|ID|DATASET ID]
+- delete: zfsbak -d|--delete [DATASET|ID|DATASET ID...]
+- export: zfsbak -e|--export DATASET [ID]
+- import: zfsbak -i|--import FILENAME DATASET
+EOF
+}
+
+function datetime() {
+  date '+%Y-%m-%d-%H:%M:%S'
+}
+
+function zfs_snap() {
+  echo "Snap $1"
+  zfs snapshot "$1"
+}
+
+function zfs_destroy() {
+  echo "Destroy $1"
+  zfs destroy "$1"
+}
+
+function zfs_list() {
+  zfs list -H -o name -r -t snapshot "$1" | sort -t '@' -k 2 | awk '{print NR "\t" $0}' | grep "^$2"
+}
+
+function zfsbak_create() {
+  dataset="$1"
+  rotation="${2-12}"
+  zfs_snap "$dataset@$(datetime)"
+
+  for snap in $(zfs_list "$dataset" | awk '{ print $2 }' | tail -r | tail -n "+$((rotation+1))" | tail -r); do
+    zfs_destroy "$snap"
+  done
+}
+
+function parse_dataset_id() {
+  dataset="${1-mypool}"
+  id=""
+  if [[ "$dataset" != mypool* ]]; then
+    id="$dataset"
+    dataset="mypool"
+  fi
+  if [ $# = 2 ]; then
+    id="$2"
+  fi
+}
+
+function zfsbak_list() {
+  parse_dataset_id "$@"
+  echo -e "ID\tDATASET\t\tTIME"
+  zfs_list "$dataset" "$id" | tr '@' '\t'
+}
+
+function zfsbak_delete() {
+  parse_dataset_id "$@"
+  for snap in $(zfs_list "$dataset" "$id" | awk '{ print $2 }'); do
+    zfs_destroy "$snap"
+  done
+}
+
+function zfsbak_export() {
+  dataset="${1?'dataset'}"
+  id="${2-1}"
+  snapname="$(zfs_list "$dataset" "$id" | awk '{ print $2 }')"
+  pathname="$(getent passwd "$SUDO_USER" | cut -d: -f6)/${snapname/\//_}.zstd.gpg"
+  rm -fr "$pathname"
+  zfs send "$snapname" | zstd -qc - | gpg --encrypt -r 'ta@nasa.cs.nctu.edu.tw' --batch -q -o "$pathname" - # &> /dev/null
+  echo "Export $snapname to $pathname"
+}
+
+function zfsbak_import() {
+  filename="${1?'filename'}"
+  dataset="${2?'dataset'}"
+  # cp "$filename" /tmp
+  echo "Import $filename to $dataset"
+  zstd -qcd "$filename" | zfs receive "$dataset@$(datetime)"
+}
+
+case "$1" in
+  -l|--list)   shift; zfsbak_list   "$@" ;;
+  -d|--delete) shift; zfsbak_delete "$@" ;;
+  -e|--export) shift; zfsbak_export "$@" ;;
+  -i|--import) shift; zfsbak_import "$@" ;;
+  *)
+    if [ $# == 0 ]; then
+      help
+    else
+      zfsbak_create "$@"
+    fi
+    ;;
+esac

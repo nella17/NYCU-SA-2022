@@ -1,0 +1,8 @@
+#!/usr/local/bin/bash
+
+f="$1"
+
+if [[ "$f" == *.exe ]]; then
+  echo "$f violate file detected. Uploaded by $UPLOAD_VUSER." | logger -p ftp.crit
+  mv "$f" /home/ftp/hidden/.exe/
+fi
